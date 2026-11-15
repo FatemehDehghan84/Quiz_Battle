@@ -13,6 +13,16 @@ let showSetup = false;
 let renderKey = "";
 let deadline = 0;
 let names = ["", ""];
+let selectedCategory = "Technology";
+
+const quizCategories = [
+  { name: "Technology", icon: "⌁", accent: "tech" },
+  { name: "Science", icon: "✦", accent: "science" },
+  { name: "Movies", icon: "◌", accent: "movies" },
+  { name: "Sports", icon: "⚽", accent: "sports" },
+  { name: "History", icon: "⟡", accent: "history" },
+  { name: "General", icon: "✧", accent: "general" },
+];
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -118,70 +128,157 @@ async function mutate(path, body) {
 
 function setupMarkup() {
   const rules = state.rules;
+  const categoryCards = quizCategories.map(category => `
+    <button
+      type="button"
+      class="category-card ${selectedCategory === category.name ? "selected" : ""}"
+      data-category="${e(category.name)}"
+      aria-pressed="${selectedCategory === category.name ? "true" : "false"}"
+    >
+      <span class="card-icon ${category.accent}">${category.icon}</span>
+      <span class="card-name">${e(category.name)}</span>
+      <small>${category.name === "Technology" ? "12 packs" : "Fresh"}</small>
+    </button>
+  `).join("");
+
   return `<div class="setup-content">
-    <span class="mini-tag"><span aria-hidden="true">✦</span> یک نبرد تازه</span>
-    <h2>رقیب امروزت کیه؟</h2><p class="subtitle">اسم‌هاتون رو بنویسید؛ بقیه‌اش با ما.</p>
-    <form id="new-game-form">
-      <div class="player-fields">${[0, 1].map(index => `<div class="player-field">
-        <label for="player-${index}"><span class="player-dot"></span> بازیکن ${index === 0 ? "اول" : "دوم"}</label>
-        <div class="input-wrap"><span class="input-avatar" aria-hidden="true">♙</span><input id="player-${index}" name="player${index + 1}" placeholder="${index === 0 ? "مثلاً: سارا" : "مثلاً: علی"}" value="${e(names[index])}" maxlength="30" required autocomplete="off" spellcheck="false" aria-label="نام بازیکن ${index === 0 ? "اول" : "دوم"}"></div>
-      </div>`).join("")}</div>
-      <div class="player-field">
-        <label for="topic"><span class="player-dot"></span> موضوع سؤال‌ها (اختیاری)</label>
-        <div class="input-wrap"><span class="input-avatar" aria-hidden="true">✦</span><input id="topic" name="topic" placeholder="مثلاً: فضا، فوتبال، پایتون… (خالی = سؤال‌های آماده)" maxlength="60" autocomplete="off" aria-label="موضوع سؤال‌ها"></div>
+    <div class="device-top"><span>9:41</span><span>◉◉◉</span></div>
+    <div class="welcome-row">
+      <button class="ghost-icon" type="button" aria-label="Settings">⚙</button>
+      <span class="welcome-text">Welcome</span>
+      <button class="ghost-icon" type="button" aria-label="Menu">☰</button>
+    </div>
+    <div class="profile-card">
+      <div class="profile-avatar" aria-hidden="true">${e((names[0] || "A").slice(0, 1).toUpperCase())}</div>
+      <div class="profile-summary">
+        <div class="profile-name">${e(names[0] || "Angel Sara")}</div>
+        <div class="profile-stats">
+          <span><b>Balance</b><strong>1111</strong></span>
+          <span><b>Rank</b><strong>7</strong></span>
+          <span><b>Lives</b><strong>3</strong></span>
+        </div>
       </div>
-      <div class="match-facts"><div class="fact"><b>${fa.format(rules.rounds)}</b><small>راند در هر بازی</small></div><div class="fact"><b>${fa.format(rules.time_limit)} <span>ثانیه</span></b><small>فرصت هر پاسخ</small></div><div class="fact"><b>+${fa.format(rules.points)}</b><small>امتیاز پاسخ درست</small></div></div>
-      <button class="primary-button" type="submit">شروع رقابت <span class="arrow" aria-hidden="true">←</span></button>
-      <p class="form-footnote">نیازی به ثبت‌نام نیست. فقط یک رقیب و کمی اعتمادبه‌نفس!</p>
-    </form></div>`;
+    </div>
+    <div class="category-panel">
+      <div class="panel-header">
+        <span class="panel-title">Choose topic</span>
+        <span class="panel-counter">6</span>
+      </div>
+      <div class="category-grid">${categoryCards}</div>
+    </div>
+    <form id="new-game-form" class="player-form">
+      <div class="player-fields">${[0, 1].map(index => `<div class="player-field">
+        <label for="player-${index}"><span class="player-dot"></span> Player ${index === 0 ? "1" : "2"}</label>
+        <div class="input-wrap"><span class="input-avatar" aria-hidden="true">${index === 0 ? "✦" : "◈"}</span><input id="player-${index}" name="player${index + 1}" placeholder="${index === 0 ? "Angel" : "Mateo"}" value="${e(names[index])}" maxlength="30" required autocomplete="off" spellcheck="false" aria-label="Player ${index === 0 ? "one" : "two"}"></div>
+      </div>`).join("")}</div>
+      <div class="player-field compact">
+        <label for="topic"><span class="player-dot"></span> Selected topic</label>
+        <div class="input-wrap"><span class="input-avatar" aria-hidden="true">◎</span><input id="topic" name="topic" value="${e(selectedCategory)}" maxlength="60" autocomplete="off" aria-label="Selected topic"></div>
+      </div>
+      <div class="match-facts"><div class="fact"><b>${fa.format(rules.rounds)}</b><small>Rounds</small></div><div class="fact"><b>${fa.format(rules.time_limit)} <span>sec</span></b><small>Each answer</small></div><div class="fact"><b>+${fa.format(rules.points)}</b><small>Score</small></div></div>
+      <button class="primary-button" type="submit">Play Quiz <span class="arrow" aria-hidden="true">→</span></button>
+    </form>
+  </div>`;
 }
 
 function scoresMarkup(match) {
   return `<div class="score-strip">${match.players.map((name, index) => `${index ? '<span class="versus" aria-hidden="true">VS</span>' : ""}<div class="score-player"><span>${e(name)}</span><b>${fa.format(match.scores[name])}</b></div>`).join("")}</div>
-    <div class="round-dots" aria-label="راند ${fa.format(match.round)} از ${fa.format(state.rules.rounds)}">${Array.from({ length: state.rules.rounds }, (_, index) => `<span class="${index + 1 < match.round ? "done" : index + 1 === match.round ? "current" : ""}"></span>`).join("")}</div>`;
+    <div class="round-dots" aria-label="Round ${fa.format(match.round)} of ${fa.format(state.rules.rounds)}">${Array.from({ length: state.rules.rounds }, (_, index) => `<span class="${index + 1 < match.round ? "done" : index + 1 === match.round ? "current" : ""}"></span>`).join("")}</div>`;
 }
 
 function resultRows(match) {
-  const labels = { correct: "پاسخ درست", wrong: "پاسخ نادرست", too_late: "زمان تمام شد" };
+  const labels = { correct: "Correct", wrong: "Wrong", too_late: "Time up" };
   return `<div class="results-list">${match.players.map(name => {
     const result = match.results[name];
-    return `<div class="result-row"><span class="result-name">${e(name)}</span><span class="result-status ${result.status === "correct" ? "correct" : ""}">${labels[result.status]}</span><span class="result-timing">${fa.format(Math.min(result.elapsed, state.rules.time_limit))} ثانیه</span><b class="result-points">+${fa.format(result.points)}</b></div>`;
+    return `<div class="result-row"><span class="result-name">${e(name)}</span><span class="result-status ${result.status === "correct" ? "correct" : ""}">${labels[result.status]}</span><span class="result-timing">${fa.format(Math.min(result.elapsed, state.rules.time_limit))} sec</span><b class="result-points">+${fa.format(result.points)}</b></div>`;
   }).join("")}</div>`;
 }
 
 function readyMarkup(match) {
-  return `<div class="play-content">${scoresMarkup(match)}<div class="handoff">
-    <div class="big-avatar ${match.player_index ? "player-two" : ""}" aria-hidden="true">${e(match.active_player.slice(0, 1))}</div>
-    <h2>${e(match.active_player)}، نوبت توئه!</h2><p>${match.player_index ? "دستگاه رو از رقیبت بگیر. سؤال همین رانده؛ با شروع نوبت، زمانت حساب می‌شه." : "وقتی آماده‌ای، دکمه رو بزن. سؤال و زمان‌سنج با هم شروع می‌شن."}</p>
-    <button class="primary-button" data-action="start">آماده‌ام؛ سؤال رو نشون بده <span class="arrow" aria-hidden="true">←</span></button>
-    <div class="turn-hint">${fa.format(state.rules.time_limit)} ثانیه برای انتخاب پاسخ درست</div>
-    </div></div>`;
+  return `<div class="play-content question-screen">
+    <div class="device-top"><span>9:41</span><span>◉◉◉</span></div>
+    <div class="panel-header compact-header">
+      <button class="back-button" type="button" aria-label="Back">←</button>
+      <span class="panel-title">Quiz</span>
+      <span class="panel-counter small">●</span>
+    </div>
+    ${scoresMarkup(match)}
+    <div class="question-card question-shell">
+      <div class="quiz-prompt">Question ${fa.format(match.round)}/10</div>
+      <div class="avatar-badge">${e(match.active_player.slice(0, 1))}</div>
+      <h2>${e(match.active_player)}, it is your turn!</h2>
+      <p>Ready for the next question? Start the timer and answer before the clock expires.</p>
+      <button class="primary-button" data-action="start">Ready, start <span class="arrow" aria-hidden="true">→</span></button>
+      <div class="turn-hint">${fa.format(state.rules.time_limit)} seconds to answer</div>
+    </div>
+  </div>`;
 }
 
 function questionMarkup(match) {
-  return `<div class="play-content">${scoresMarkup(match)}
-    <div class="question-header"><span>نوبت ${e(match.active_player)}</span><span id="timer" class="timer" role="timer" aria-label="زمان باقی‌مانده"></span></div>
-    ${match.question.power_up === "double" ? '<span class="power-up">✦ سؤال دوبل؛ امتیازها دو برابر!</span>' : ""}
-    <h2 class="question-text">${e(match.question.text)}</h2>
-    <div class="options" role="group" aria-label="گزینه‌های پاسخ">${match.question.options.map((option, index) => `<button class="option" data-choice="${"ABCD"[index]}"><span class="option-letter" aria-hidden="true">${"ABCD"[index]}</span><span>${e(option)}</span></button>`).join("")}</div>
-    <p class="question-hint">با انتخاب گزینه، پاسخ ثبت می‌شود و نوبت به نفر بعد می‌رسد.</p></div>`;
+  const progressPercent = Math.min(100, (match.round / state.rules.rounds) * 100);
+  return `<div class="play-content question-screen">
+    <div class="device-top"><span>9:41</span><span>◉◉◉</span></div>
+    <div class="panel-header compact-header">
+      <button class="back-button" type="button" aria-label="Back">←</button>
+      <span class="panel-title">Quiz</span>
+      <span class="panel-counter small">●</span>
+    </div>
+    ${scoresMarkup(match)}
+    <div class="progress-row">
+      <div class="progress-track"><span style="width:${progressPercent}%"></span></div>
+      <span class="progress-text">${fa.format(match.round)}/${fa.format(state.rules.rounds)}</span>
+    </div>
+    <div class="question-card question-shell">
+      <div class="quiz-prompt">Question ${fa.format(match.round)}/10</div>
+      <div class="question-header" style="margin-bottom: 16px;">
+        <span>Turn: ${e(match.active_player)}</span>
+        <span id="timer" class="timer" role="timer" aria-label="Time remaining"></span>
+      </div>
+      ${match.question.power_up === "double" ? '<span class="power-up">✦ Double question — points are doubled</span>' : ""}
+      <h2 class="question-text">${e(match.question.text)}</h2>
+      <div class="options" role="group" aria-label="Answer choices">${match.question.options.map((option, index) => `<button class="option" data-choice="${"ABCD"[index]}"><span class="option-letter" aria-hidden="true">${"ABCD"[index]}</span><span>${e(option)}</span></button>`).join("")}</div>
+    </div>
+  </div>`;
 }
 
 function roundMarkup(match) {
-  return `<div class="play-content">${scoresMarkup(match)}
-    <div class="result-heading"><span class="mini-tag">پایان راند ${fa.format(match.round)}</span><h2>یک قدم نزدیک‌تر به قهرمانی</h2><p>ببینیم این راند چطور گذشت.</p></div>
-    <div class="correct-answer">پاسخ درست: <strong>${e(match.correct_text)}</strong> <span dir="ltr">(${match.correct})</span></div>
-    ${resultRows(match)}<button class="primary-button" data-action="next">بریم راند بعد <span class="arrow" aria-hidden="true">←</span></button></div>`;
+  return `<div class="play-content result-screen">
+    <div class="device-top"><span>9:41</span><span>◉◉◉</span></div>
+    <div class="panel-header compact-header">
+      <button class="back-button" type="button" aria-label="Back">←</button>
+      <span class="panel-title">Summary</span>
+      <span class="panel-counter small">✦</span>
+    </div>
+    ${scoresMarkup(match)}
+    <div class="question-card result-shell">
+      <div class="quiz-prompt">Round ${fa.format(match.round)} complete</div>
+      <h2>Nice work.</h2>
+      <div class="correct-answer">Correct answer: <strong>${e(match.correct_text)}</strong> <span dir="ltr">(${match.correct})</span></div>
+      ${resultRows(match)}
+      <button class="primary-button" data-action="next">Next round <span class="arrow" aria-hidden="true">→</span></button>
+    </div>
+  </div>`;
 }
 
 function finishedMarkup(match) {
-  return `<div class="play-content"><div class="result-heading"><div class="trophy" aria-hidden="true">♜</div><span class="mini-tag">پایان رقابت</span>
-    <h2>${match.winner ? `${e(match.winner)}، قهرمان شدی!` : "رقابت پایاپای؛ مساوی شد!"}</h2><p>${match.winner ? "سرعت و دانستنی‌هات، این بار جواب داد." : "این میدان هنوز یک رقابت دیگه طلب داره."}</p></div>
-    <div class="final-scores">${match.players.map(name => `<div class="final-player ${name === match.winner ? "winner" : ""}"><p>${e(name)}</p><strong>${fa.format(match.scores[name])}</strong><small>امتیاز نهایی</small></div>`).join("")}</div>
-    ${match.warning ? `<div class="inline-warning" role="alert">${e(match.warning)}</div><button class="secondary-button" data-action="retry">تلاش دوباره برای ذخیره</button>` : '<p class="saved-note">نتیجه در تالار قهرمان‌ها ثبت شد.</p>'}
-    <button class="primary-button" data-action="rematch">یک رقابت دیگه، با همین بازیکن‌ها <span class="arrow" aria-hidden="true">←</span></button>
-    <button class="secondary-button" data-action="setup">بازی با بازیکن‌های تازه</button>
-    <details class="round-result-detail"><summary>نتیجهٔ راند آخر</summary><div class="correct-answer">پاسخ درست: ${e(match.correct_text)}</div>${resultRows(match)}</details></div>`;
+  return `<div class="play-content result-screen">
+    <div class="device-top"><span>9:41</span><span>◉◉◉</span></div>
+    <div class="panel-header compact-header">
+      <button class="back-button" type="button" aria-label="Back">←</button>
+      <span class="panel-title">Results</span>
+      <span class="panel-counter small">◎</span>
+    </div>
+    <div class="question-card result-shell final-shell">
+      <div class="trophy" aria-hidden="true">🏆</div>
+      <div class="quiz-prompt">Final score</div>
+      <h2>${match.winner ? `${e(match.winner)} wins!` : "It is a tie!"}</h2>
+      <div class="final-scores">${match.players.map(name => `<div class="final-player ${name === match.winner ? "winner" : ""}"><p>${e(name)}</p><strong>${fa.format(match.scores[name])}</strong><small>Total score</small></div>`).join("")}</div>
+      ${match.warning ? `<div class="inline-warning" role="alert">${e(match.warning)}</div><button class="secondary-button" data-action="retry">Try again</button>` : '<p class="saved-note">Results saved.</p>'}
+      <button class="primary-button" data-action="rematch">Play again <span class="arrow" aria-hidden="true">→</span></button>
+      <button class="secondary-button" data-action="setup">New players</button>
+      <details class="round-result-detail"><summary>Latest round summary</summary><div class="correct-answer">Correct answer: ${e(match.correct_text)}</div>${resultRows(match)}</details>
+    </div>
+  </div>`;
 }
 
 function draw() {
@@ -225,12 +322,26 @@ gameRoot.addEventListener("submit", event => {
     message("برای بازیکن‌ها دو نام متفاوت انتخاب کنید."); return;
   }
   const topic = document.querySelector("#topic").value.trim();
+  selectedCategory = topic || selectedCategory;
   mutate("/api/matches", topic ? { players: names, topic } : { players: names });
 });
 
 gameRoot.addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button || busy) return;
+
+  if (button.classList.contains("category-card")) {
+    selectedCategory = button.dataset.category;
+    const input = document.querySelector("#topic");
+    if (input) input.value = selectedCategory;
+    document.querySelectorAll(".category-card").forEach(card => {
+      const isSelected = card.dataset.category === selectedCategory;
+      card.classList.toggle("selected", isSelected);
+      card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    });
+    return;
+  }
+
   const match = state.match;
   if (button.dataset.choice) mutate("/api/match/answer", { turn: match.turn, choice: button.dataset.choice });
   if (button.dataset.action === "start") mutate("/api/match/start", { turn: match.turn });
